@@ -1,0 +1,340 @@
+DCP 研究创新盘点、问题审查与下一阶段策划案
+版本：2026-09-13（当前代码快照之后的研究计划，不是实验结果论文）
+工作区：D:\PythonProjects\srtp2
+主代码目录：code/Deep_Correlated_Prompting-main/
+私有仓库：https://github.com/ZJBIG/srtp2-dcp-research
+代码基线提交：1dfde87（完整哈希可由 git show 1dfde87 查询）
+
+============================================================
+一、结论先行
+============================================================
+1. 当前不是“只有想法”：relative importance、availability-aware bounded Prompt Adapter、direct-task continuous UtilityGate 已有代码、配置、训练阶段管理和测试。
+2. 当前也不是“已证明有效的新方法”：本轮未核验到这条最终主线的完整、同协议、多 seed、严格测试集证据。根 README 明确说明正式训练与验证尚待完成；本地最新 smoke 的 hparams 是 2 epoch、每阶段只运行 2 batch，不能当正式收益。
+3. 建议定位：在冻结 DCP 基座上，研究“任务效用监督的提示干预，以及干预幅度的样本级控制”，而非泛称“首次动态 Prompt”或“首次可靠性 Gate”。
+4. 最先要做的不是继续堆模块，而是：修复可恢复性和评估协议 -> 建立可比基线 -> 验证 importance 和 Gate 是否有独立增益 -> 再扩展一个新方向。
+5. 本次只归档与策划，不修改模型数学结构、不重新训练、不删除数据和权重。本文待办不代表已经实现。
+
+【证据等级】
+A：本轮直接查看源码/配置或运行验证。
+B：现有 README 对历史结论的摘要，未重新独立验证全部实验。
+C：后续研究假设，需要实验和进一步文献比较。
+
+============================================================
+二、仓库与材料盘点
+============================================================
+2.1 归档范围
+- 原目录的 .git 是空目录，根目录与核心代码目录均不是有效 Git 仓库；本次初始化 main 分支。
+- 已核实 GitHub 账户为 ZJBIG，原有仓库未发现本研究对应项目，创建私有仓库 srtp2-dcp-research，避免提前公开未发表研究。
+- 代码快照包括：核心源码、配置、6 个测试文件、平台部署入口、数据转换/预检/审计脚本、已有研究说明、实验 hparams 与指标记录。
+- 新增 .gitignore 和 .gitattributes：排除本地环境、凭据类文件、模型权重、原始数据、重复上传包、重复源码快照以及超大日志；Shell/Python 等文本设置可移植换行规则。
+- 9.32 GB 的 aistation_upload.zip、881 MB 的代码压缩包、数据、CLIP 权重与 ckpt 均留在本机，未上传 Git。
+- 三个超大日志（约 59 MB/34 MB/105 MB）留在本机；较小运行日志及指标仍保留。分词器必需 bpe_simple_vocab_16e6.txt.gz 保留在版本控制中。
+- 论文 PDF 作为参考材料留在本地，不在未核实分发权限时重新发布；保留原项目出处、引用和源码版权说明。正式公开前还需核查上游许可证。
+- Git 归档是“代码与小型证据归档”，不是“全量数据/权重的灾备”。克隆后仍需按 README 准备数据、模型与环境。
+
+2.2 论文材料的边界
+- papers/ 下本轮只定位到 Deep Correlated Prompting.pdf；没有定位到属于本项目作者的完整论文正文或投稿草稿。
+- 因此本文盘点的是“代码所支持的论文候选创新”，不是对未提供论文全文的逐段审稿。
+- 根 README.md 是当前研究路线与 AIStation 执行指南；子目录 README.md 是原 DCP 论文说明，不应混为自有贡献。
+- 根 README 第 602-614 行列出的旧审查/实验台账已合并；不能把这些标题当作本轮实际读到的独立报告。
+- dcp_reliability_metrics_comparison.csv 等历史指标已原样归档。本轮表格读取服务不接受本机 Windows 路径，未能完成指标数值复核；本文不编造其数值、不据此断言最终主线涨点。
+
+2.3 主要代码资产（以下相对路径均以主代码目录为根）
+- clip/modules/vision_transformer_prompts.py：原 DCP 的提示与主干逻辑，以及可靠性分支复用的基础组件。
+- clip/modules/clip_missing_aware_prompt_module.py：模型编排、基座加载、importance 教师目标、两阶段训练、Gate 任务损失。
+- clip/modules/reliability_learning.py：importance 模式、ReliabilityPredictor、PromptAdapter、UtilityGate、辅助 Gate 目标。
+- clip/modules/reliability_diagnostics.py：相关性、分组诊断、condition-preserving shuffle、Gate 统计。
+- clip/modules/signed_gate_offline.py 与 tools/export_signed_gate_cache.py：离线 signed advantage/Gate 诊断资产，不等同于当前默认训练主线。
+- clip/modules/counterfactual_proxy.py 与 COUNTERFACTUAL_GAME.md：历史反事实代理/对抗分支；正式配置未开启，不能和最终主线的收益混报。
+- clip/datasets/missing_tables.py：缺失表与实验身份；tests/test_experiment_identity.py：身份与数据流程测试。
+- tools/evaluate_final_reliability.py：固定 Gate、learned、shuffled、oracle 及 importance 来源消融；当前存在下文的协议缺口。
+- run_aistation.sh、setup_aistation_env.sh、aistation_preflight.sh：平台运行与依赖入口。
+
+============================================================
+三、原论文贡献与当前项目贡献必须分开
+============================================================
+3.1 原 DCP 已有的内容，不应再次申报为本项目原创
+- 面向完整/缺图/缺文情况的 missing-aware prompting。
+- 关联提示：利用前层和另一模态提示，建模层间与跨模态相关性。
+- 动态提示：提示由输入特征条件化。
+- 模态共享提示：共享信息投影到不同分支。
+- 冻结大部分预训练主干、参数高效适配。
+- 在 MM-IMDb、UPMC Food-101、Hateful Memes 上测试图文缺失。
+特别注意：missing-both 指数据集中混合“缺图”和“缺文”两种样本，不是每个样本两种模态都不存在。
+
+3.2 当前可提炼的候选创新（代码存在 ≠ 新颖性/有效性已成立）
+I1. 基于冻结任务损失差的 relative importance（A）
+证据：reliability_learning.py:41-75、157-197；clip_missing_aware_prompt_module.py 的 reliability target 计算。
+对完整样本，定义 delta_I=L_without_image-L_full、delta_T=L_without_text-L_full；r_I=sigmoid((delta_I-delta_T)/tau)，r_T=1-r_I。
+价值：从只有 availability 类型的判断，向任务相关、样本级的相对模态偏好推进。
+边界：共同的 L_full 相减抵消，实质为两种单模态路径损失的相对差。不是融合协同量，不是校准置信度，也不是因果效应的自动证明。
+缺失样本的输出恒为 (0.5,0.5)，其监督被屏蔽，不能声称当前方法已学习到缺失样本的细粒度重要性。
+
+I2. availability-aware bounded Prompt Adapter（A）
+证据：reliability_learning.py:200-340，尤其 228-246、277-292。
+机制：每层生成图/文残差，零初始化，按原 prompt RMS 构造 cap，并通过 tanh 限幅；显式输入 availability。
+形式：P'_l=P_l+g*DeltaP_l；DeltaP_l=cap_l*tanh(raw_l/(cap_l+epsilon))。
+价值：在原 DCP 解附近施加受限干预，g=0 提供回到基座的端点，缓解偏移失控。
+边界：按元素限幅不是泛化理论保证；当前偏移从 [batch,1,dim] 广播到 prompt token，token 级分辨率有限。
+缺失样本的 centered importance 为零，Adapter 的输入主要由缺失条件确定，因而同一缺失条件下其偏移没有来自 importance 的样本差异（cap 还依赖原 prompt）。
+
+I3. direct-task continuous UtilityGate（A）
+证据：reliability_learning.py:343-377；clip_missing_aware_prompt_module.py:650-664、875-901；config.py:314-335。
+机制：Gate 读取 detached importance、availability 和冻结基座上下文，输出 [0,1] 连续强度；Gate 阶段通过最终任务 BCE 直接学习，不以五档 argmin 作为唯一监督。
+价值：优化“是否/多大程度采用当前 Adapter”而非默认所有样本同幅干预。
+边界：不能只用 Gate 输出有方差来证明有效；需要优于 g=1、validation-selected fixed、condition-only/context-only 和同条件 shuffled。
+
+I4. 两阶段冻结与可解释归因工具（A）
+阶段 1：训练 Predictor 与 Adapter，任务梯度与 importance 路径做隔离。
+阶段 2：只训练 UtilityGate；基座、分类器、Predictor、Adapter 均冻结。
+价值：能把“偏移是否有用”和“路由是否有用”拆开研究。
+边界：这是有价值的训练/验证设计，但仅凭分阶段训练不足以构成独立顶会级新算法。
+
+I5. 历史反事实代理博弈（A：代码；C：研究收益）
+已有 counterfactual_proxy 分支及 pilot 记录，但当前正式配置 counterfactual_enabled=false。
+作为后备方向保留，不建议同时合并进主线，以免重新引入监督与优化混杂。
+
+3.3 当前可以写的论文贡献草案
+“我们研究冻结多模态识别模型上的任务效用驱动提示干预，将基于删模态损失差的相对偏好、可用性条件化的有界提示残差和直接任务监督的连续干预强度控制组合起来，并用条件保持消融区分提示适配收益与样本级路由收益。”
+这只是方法描述。只有完成实验后，才能加上“有效改善”“优于”等结果性表述。
+
+============================================================
+四、代码与实验不足：按优先级处理
+============================================================
+P0-01【已复现】动态查询没有进入 checkpoint，基座恢复身份不完整
+位置：clip/modules/vision_transformer_prompts.py:286-290、325-333。
+三类 prompts_dynamic_* 是普通 Tensor，既非 Parameter，也非 buffer；它们实际参与前向，但不在 state_dict。
+本轮以源码中的真实类做隔离小模型实验：seed0/seed1 构建后加载相同 state_dict，registered_state_equal=True，dynamic_keys_in_state=[]，dynamic_query_equal=False，最大差约 0.069515。
+后果：两个模型即使 checkpoint 所有已注册张量一致，实际使用的动态查询仍可能不同；跨 seed、重新构建、baseline 与新模型初始化顺序都可能影响结果。
+这不是本轮新增的代码问题，也尚未量化真实 CLIP 的指标影响；但足以阻止“严格相同冻结基座”的宣称。
+修复方向：先恢复/追溯 legacy 初始化身份，明确其应是固定 buffer 还是可训练参数。固定查询应注册 persistent buffer；若改成 Parameter 则改变算法，必须作为新方法而非等价修复。无法恢复旧查询时重训可认证基线，不伪造旧状态。
+验收：不同构建 seed、加载同一基座，固定输入在 eval 下的 query/prompt/feature/logit 一致；恢复前后 g=0 等价；真实模型测试覆盖。
+
+P0-02【源码确认】best-fixed 在被评估 split 上现场择优
+位置：tools/evaluate_final_reliability.py:148-184、493-495。
+函数用当前 labels 选择最佳 macro-F1 gate 与最低 loss gate；当 --split test 时也一样。
+后果：这是 test hindsight comparator，不是 validation-selected baseline。即使会让比较对象更强，也不能作为可部署、公平选择的 baseline 报告。
+未发现这些 test 标签进入 learned Gate 推理；不要扩大表述为“整个模型训练泄漏”。
+修复方向：在 validation 选择并保存 gate/threshold/checkpoint/selection_metric，再固定应用到 test；oracle 和 hindsight 独立命名、仅作为分析上界。不要在 test 看完结果后再选模型或调参。
+验收：test 结果产物含 validation 决策文件哈希；更改 test 标签不会改变被选择 gate；训练/验证/测试数据 ID 隔离。
+
+P1-03【源码确认】目前消融不能完整回答“连续 Gate 是否用到了样本重要性”
+位置：evaluate_final_reliability.py:536-537 为全局 gate shuffle；195-207、675-685 对 importance -> gate 的来源消融使用 >=0.5 硬端点。
+后果：全局 shuffle 同时破坏缺失条件匹配，领先它可能仅说明 condition 匹配有用。硬端点消融也不等于正式连续 Gate。
+修复方向：增加 condition-preserving gate shuffle；分别测 importance-only/context-only/availability-only/neutral importance；使用原连续 gate 重新前向，并区分只干预 Gate 输入与同时干预 Adapter 输入。
+验收：固定 seed 可复现；组内 gate 多重集不变；中间强度确实进入 encode_reliability_state，不被二值化。
+
+P1-04【机制边界】relative importance 不是缺失场景下全面的可靠性估计
+在 missing-both=0.7 时，完整样本理论上约 30%，只有这些样本贡献 relative 监督；实际比例以缺失表为准。
+当前缺失样本 importance 恒中性，细粒度控制主要来自 Gate 的 context，而非 Predictor。
+验收：完整/缺图/缺文分别报告增益；论文明确训练教师访问条件，不用隐藏模态或标签做部署推理；优先验证完整子集的 importance 独立价值。
+
+P1-05【待量化】当前基线质量与证据链不足
+默认 Original DCP 路径指向 epoch=3-step=507.ckpt，文件名不能证明模型欠拟合，也不能证明是收敛最优。
+README 中“relative 相关性更好”“bounded Adapter 有效”属于历史摘要，本轮未独立复核原始数值。
+需确认：完整数据训练步数、val 选择规则、早停条件、学习率、有效 batch、缺失表以及恢复身份。不得只比较不同预算、不同缺失表的 checkpoint。
+
+P1-06【源码确认的协议风险】缺失表身份尚未绑定数据内容/行序
+位置：clip/datasets/missing_tables.py:49-58、73-86、179-188。
+已具备独立生成、长度/取值验证、seed 身份；但同长度换数据或重排行序仍可能错配，legacy 表尤其需追溯。
+当前 seed 同时影响模型与缺失表，多 seed 方差混合两种随机性。
+建议：数据 split/sample-ID 顺序哈希 + 缺失表内容哈希 + init_seed/missing_seed 分离；先固定表测模型 seed，再固定模型协议测多表鲁棒性。
+未证实实际发生数据错配或 split 重叠，不应按已发生错误写论文。
+
+P2-07【工程】测试覆盖尚未闭环
+本轮 56 个 Python 文件 AST 语法检查通过；glossary.py 有旧正则转义 SyntaxWarning。
+第一次单元测试 39 项通过、2 个模块导入错误，原因是执行进程缺少 PROCESSOR_ARCHITECTURE，导致 py-cpuinfo 不能识别架构。
+核实机器为 x86_64 后，仅给本次测试进程补 PROCESSOR_ARCHITECTURE=AMD64；复跑 58/58 通过，无源代码/环境包修改。
+58 项包含 mock/TinyModel 测试；不能替代真实 CLIP 跨 seed checkpoint 恢复、两个训练阶段端到端梯度验证和正式训练。
+独立导入还遇到 transformers.__spec__ 的环境/导入顺序兼容问题；需要干净环境验证，不能据此虚称训练必然失败。
+建议加入 CPU 组件测试和 GPU 集成测试；固定可复现依赖，记录 Python/PyTorch/CUDA/GPU 与启动方式。
+
+P2-08【工程与论文】推理/训练代价、可移植性、文档一致性
+- Gate 学习需要梯度穿过冻结编码器；冻结权重不等于无激活开销，应报告显存、延迟、吞吐和总训练时长。
+- 重要性教师多次删模态前向较贵；离线缓存要绑定代码/模型/样本/增强/缺失表哈希，不能缓存后改变增强却继续当同一目标。
+- 评估脚本明显依赖 CUDA；CPU smoke 与 GPU 正式评估要写清边界。
+- 根 README 的旧虚拟环境命令使用单引号会阻止 $DCP_VENV_DIR 等变量展开（第 218-219 行），应另行修订而不改写历史实验 provenance。
+- 子目录 README 仍以原项目官方实现为标题，未来应加衍生研究边界；根 README 第 180-194 行有重复主线描述。
+- 仅有 MM-IMDb 完整实验不足以证明方法普适，需第二数据集；拓展 Hateful Memes 时须注意许可和任务数据处理边界。
+
+============================================================
+五、最新相关工作约束：不要把组合包装成首次提出
+============================================================
+已查证的重要邻近工作：
+[R1] Deep Correlated Prompting for Visual Recognition with Missing Modalities，NeurIPS 2024。
+https://arxiv.org/abs/2410.06558
+https://arxiv.org/html/2410.06558v4
+原代码：https://github.com/hulianyuyy/Deep_Correlated_Prompting
+
+[R2] Synergistic Prompting for Robust Visual Recognition with Missing Modalities（SyP），2025。
+https://arxiv.org/abs/2507.07802
+https://arxiv.org/html/2507.07802v1
+已核实其 dynamic adapter：图文特征 -> sigmoid 缩放 -> 调制 base prompt，并与共享静态提示相加；具有逐层传播。
+因此“上下文 -> MLP -> sigmoid -> 动态 Prompt”已不是稳妥的新颖性主张。
+本项目可区分的是删模态任务损失监督、加性有界残差、冻结基座身份以及独立 direct-task strength control，但仍须与完整文献和同预算 SyP-style baseline 比较。
+
+[R3] Multimodal Prompt Learning with Missing Modalities for Emotion Recognition，2024。
+https://arxiv.org/abs/2407.05374
+提醒：该文任务背景与本项目图文识别未必相同，不直接拼接成绩表。
+
+[R4] Memory-Driven Prompt Learning 相关工作，IJCAI 2025（检索到，尚未逐式精读）。
+https://www.ijcai.org/proceedings/2025/0274.pdf
+若考虑原型/记忆库补全，必须进一步对比，不能称首次。
+
+本次为定向相关工作核查，不是穷尽截至 2026-09-13 的所有论文；“未检索到”不构成新颖性证明。
+
+============================================================
+六、下一步创新方向策划：一个主攻、一个备选
+============================================================
+方向 A【首选】以“提示干预收益/风险”替代单纯“模态相对重要性”作为控制目标
+问题：relative importance 衡量两种单模态路径谁更好，却不必然预测这一次 Adapter 是否帮助最终任务。
+假设：显式建模 A(x,g)=L_base(x)-L_adapt(x,g) 的收益曲线或收益符号，比仅用模态偏好更贴近控制目标。
+最小方案：先保留现有 Adapter 和 continuous direct-task Gate，离线分析收益是否可预测；再加一个极小的 advantage head 或不确定性估计。保持模型容量/训练预算可比。
+风险约束：以 validation 选择的阈值，允许预测收益不足时回退 g=0；用平均损失改善、负收益样本比例、最差组损失和 risk-coverage 而非只看 Gate 二分类准确率。
+对照：现有 direct-task Gate、g1、val-fixed、context-only、condition-only、importance-only、random/condition shuffle、oracle（只做上界）。
+成败条件：除整体 macro-F1/BCE 外，降低负迁移或高缺失组风险；在至少 3 seed 和跨缺失率下成立。
+止损：若 matched-budget 的普通 context gate 已解释全部收益，不宣称 importance 创新；若 oracle headroom 很小，停止强化 Gate，先改善 Adapter。
+成本：中；复用 signed_gate_offline 和 export_signed_gate_cache；先诊断再写新损失。
+新颖性边界：advantage/不确定性/回退都不是新词，贡献必须体现在提示干预的任务定义、可验证风险控制和缺失泛化上。
+
+方向 B【第二优先】缺失机制漂移与模态退化联合鲁棒性
+问题：当前默认 MCAR 式随机缺失率，不等于真实部署中类别/质量相关的缺失；模态“存在”也不等于“有用”。
+假设：availability 与质量/效用分开建模，在训练/测试缺失分布不一致以及图像/文本退化时更稳。
+最小方案：不先改模型，建立 missing rate/type shift 与轻量模态质量退化评估；只有暴露真实失败后，再研究分组稳健优化或质量条件 Gate。
+实验：train missing-both 0.7；val/test 在 0、0.3、0.5、0.7、0.9、1.0 缺失率与缺图/缺文/混合条件下评估。1.0 仍是每样本至少一种模态可用。
+扩展：基于输入可观测质量构造缺失倾向；基于标签的 MNAR 仅是研究压力测试，标签不得成为推理输入。每种生成机制明确记录。
+指标：宏/微 F1、BCE、按缺失条件的最差组、退化曲线面积、方差、必要时 Brier/ECE（多标签定义须固定）。
+风险：只增加 benchmark 可能不足以成为算法创新；应与方向 A 结合而非另堆多个适配模块。
+成本：中；优先作为主线的外部有效性验证。
+
+方向 C【备选】显式建模模态协同/冲突而不是相对优劣
+问题：delta_I-delta_T 抵消 L_full，无法表示“两个都重要”或“组合互相冲突”。
+最小假设：同时保留 absolute delta、relative difference，再加入协同项 S=L_I+L_T-L_IT-L_empty；在冻结模型的定义下分析其与干预收益的关系。
+S 的符号只在固定损失定义下解释：S>0 表示联合观测的损失改善超过两种单独改善之和。
+实验：relative-only、absolute-only、relative+absolute、加协同项、标签打乱/同条件打乱控制；先看教师可预测性，再看最终任务收益。
+风险：L_empty 的全零输入不是自然样本，prompt 路径切换也改变计算机制；因此只能叫 operational counterfactual utility，不直接上升为可识别的真实因果效应。
+成本：中高；训练教师开销更大；完整样本不足会造成监督覆盖瓶颈。
+
+方向 D【后置】模态/层级细粒度 Gate 与预算感知控制
+问题：一个样本一个 g 同时控制所有层与两个模态，可能掩盖层间/模态间最优干预差异。
+最小方案：先 2 个模态 Gate 或 2 段深度 Gate，再考虑低秩分解 g_(l,m)，保持总偏移范数与额外参数预算一致。
+对照：单 Gate、仅增加相同参数 MLP、随机层 Gate、各层固定 gate、低秩 Gate；报告推理代价。
+风险：参数增加导致表面涨点；只有超过 matched-budget control 才有研究意义。
+成本：中；必须等方向 A 的单 Gate 有效性确定。
+
+方向 E【暂缓】反事实代理博弈、生成补全或大规模记忆库
+理由：已有 counterfactual_proxy 分支可用，但它引入优化稳定性、教师/补全偏差和额外文献重叠；当前主线证据尚未闭环。
+仅当高缺失条件明确受限、且简单改进失败后，另开分支与独立协议，不覆盖本次归档主线。
+
+建议选择：先完成当前主线的可靠评估，以 A 为方法主攻、B 为泛化验证；C/D/E 不并行堆叠。
+
+============================================================
+七、实验设计与论文判定规则
+============================================================
+7.1 先锁定基座和数据
+- 修复/认证完整基座状态，记录代码 commit、基座 SHA256、CLIP SHA256、Arrow/sample-ID 哈希和 missing table 哈希。
+- 训练集拟合，验证集选 checkpoint/gate/阈值/超参数；方案冻结后只做一次正式测试集报告。
+- 共同基座的添加模块增益与整个 pipeline 多 seed 分开报告；不能把同一基座下 3 次头部训练当成 3 个完整独立 pipeline。
+- 标注训练预算：base epoch、adapter epoch、gate epoch、optimizer steps、有效 batch、数据规模及 GPU 时长。
+
+7.2 最小消融矩阵
+E0 Original DCP/g=0：基座身份与独立 baseline 一致。
+E1 bounded Adapter + g=1：回答 Adapter 是否有用。
+E2 bounded Adapter + validation-selected fixed g：排除全局强度调优收益。
+E3 完整 learned continuous：正式方法。
+E4 condition-preserving shuffled gate：排除缺失组分布解释。
+E5 availability-only Gate、context-only Gate、importance-only Gate：剥离信息来源。
+E6 predicted vs neutral vs condition-prior vs condition-shuffled importance：分别只干预 Gate、只干预 Adapter、同时干预；连续前向。
+E7 bounded vs unbounded、availability on/off、relative vs absolute：控制参数和优化预算。
+E8 oracle importance/oracle gate：仅分析上界，不参与可部署成绩排名。
+E9 SyP-style contextual multiplicative prompt adapter 或可复现官方方法：同主干、同数据、同预算比较。
+
+7.3 统计与指标
+- 先完整 seed0 排错，再 seed1/2；最低报告 3 seed 均值与标准差，资源允许扩至 5 seed。
+- paired 比较使用相同样本 ID、相同缺失表；bootstrap 对样本成对重采样并重算 F1，不对 F1 做错误的逐样本加和。
+- 同一训练 seed 评估多个 missing seed 时，分开报告两种方差；置信区间不要混成伪独立样本。
+- 主任务 MM-IMDb：macro-F1 为主要指标，micro-F1/BCE 为辅助；完整/缺图/缺文分组，另看稀有类别。
+- 诊断：importance 相关性与覆盖、Gate 分位数/方差/饱和率、偏移与原 prompt 范数比、负收益比例、oracle headroom。
+- 工程：可训练参数、完整训练成本、推理延迟、峰值显存；报告测量设备与 batch。
+
+7.4 结果解释与止损规则
+- E1>E0，E3 不优于 E2/E4：只支持 Adapter，不支持样本级 Gate。
+- E3>E2，但去掉 importance 不降：支持 contextual routing，不支持 importance 驱动路由。
+- importance 能预测教师但最终任务不改善：只能报告表征/诊断发现，不能宣称实用增益。
+- 所有方法只在单一缺失表/单 seed 改善：属于不稳定先导证据。
+- oracle 也不明显优于 E1：Gate 可挖掘空间不足，先优化 Adapter 或基座。
+- 真实补全/额外标签只允许作为训练教师或明确 oracle，不进入正式 test 推理。
+
+============================================================
+八、ToDoList：依赖明确、每项可验收
+============================================================
+状态说明：[x] 本轮已完成；[ ] 下一阶段未执行。
+
+本轮归档与审查
+[x] 建立有效 Git 仓库并生成当前代码快照 1dfde87。
+[x] 创建 ZJBIG/srtp2-dcp-research 私有仓库。
+[x] 补充 .gitignore/.gitattributes，保留本地数据/权重/大日志，不做删除。
+[x] 审查主线模块、配置、冻结逻辑和评估协议。
+[x] 56 个当前 Python 源文件语法通过，58 项现有单元测试通过（进程架构变量条件见上）。
+[x] 用隔离小模型复现动态查询未持久化的问题。
+[x] 将创新、代码不足、文献冲突、方向与验收规则写入本策划案。
+
+里程碑 M0：可恢复、可比较的基线（必须先完成）
+[ ] T01/P0 追溯动态查询 legacy 身份并制定 buffer 迁移/重训方案。
+    产出：基座恢复审计和迁移说明；验收：跨 seed 恢复输出一致。
+[ ] T02/P0 实装基座完整状态持久化与真实 CLIP 回归测试。
+    依赖 T01；不得无证据把旧查询补成随机数并宣称恢复完成。
+[ ] T03/P0 拆分 validation 选择和 test 评估。
+    产出：selection.json（选定 gate、阈值、checkpoint、指标、数据哈希）；test 只读取已选策略。
+[ ] T04/P1 补同条件 gate shuffle、连续 importance 来源消融与信息来源对照。
+    验收：连续 Gate 不被硬阈值替换，组内分布保持，结果可重复。
+[ ] T05/P1 数据/缺失表/模型身份哈希与 init_seed、missing_seed 分离。
+    验收：改数据行序会失败；同配置不会静默复用错误缓存。
+[ ] T06/P1 认证 Original DCP checkpoint 的选择规则与收敛性。
+    验收：找到完整训练曲线和验证选择记录；不足则重训，不凭文件名裁定。
+
+里程碑 M1：当前主线的有效性
+[ ] T07/P1 在干净环境运行 CPU 组件测试和真实 GPU 两阶段 smoke。
+    依赖 T02-T05；验收：梯度只流向允许模块、无 NaN、g0 等价、恢复后同输出。
+[ ] T08/P1 完整训练当前冻结主线：Adapter 10 + Gate 10 epoch，先 seed0。
+    依赖 T06-T07；固定预算，不边看 test 边改结构。
+[ ] T09/P1 执行 E0-E9 的最小可行子集并做 Gate/importance 归因判决。
+    依赖 T08；至少 E0-E6，预算允许补 E7/E9；oracle 仅上界。
+[ ] T10/P1 扩展 seed1/2 和缺失条件/缺失率泛化。
+    依赖 T09；验收：均值、标准差、配对比较、最差组与代价。
+
+里程碑 M2：只选一个新方法方向
+[ ] T11/P1 先做方向 A 的 advantage 可预测性与 oracle headroom 诊断。
+    依赖 M1；headroom 不足则不加 Gate 复杂度。
+[ ] T12/P1 若 T11 通过，加入极小收益/风险控制原型并与现有 direct-task Gate 同预算比较。
+    产出：新分支、小规模验证、不覆盖 main 的已归档版本。
+[ ] T13/P2 用方向 B 检验新方法在缺失机制与模态质量漂移中的稳定性。
+[ ] T14/P2 增加第二数据集；先 UPMC Food-101，固定任务指标和超参数迁移规则。
+[ ] T15/P2 仅在单 Gate 有效后，再决定是否做方向 C 或 D。
+
+里程碑 M3：形成可投稿材料
+[ ] T16/P1 提供/定位本项目实际论文稿件，建立“每条贡献 -> 代码 -> 表格 -> 对照 -> 限制”的证据索引。
+[ ] T17/P1 精读 DCP、SyP 与 2025-2026 相关工作，完成逐机制比较；不以“尚未检索”证明首次。
+[ ] T18/P2 完善环境锁定、数据与权重获取说明、结果清单和上游许可核查。
+[ ] T19/P2 固化最终方法后再运行正式 test；撰写负结果、局限性与计算资源说明。
+
+执行顺序：T01-T06 -> T07 -> T08 -> T09 -> T10 -> T11；之后按证据选择 T12/T13，而不是同时实现所有备选方向。
+
+============================================================
+九、建议的论文结构与当前措辞限制
+============================================================
+题目备选（暂定，不能视为最终新颖性结论）：
+“面向模态缺失的任务效用驱动有界提示适配与连续干预控制”
+“Task-Utility-Aware Bounded Prompt Adaptation under Missing Modalities”
+
+结构：
+1. 问题：缺失类型条件化不足以解释样本级提示干预效用。
+2. 方法：基座身份、relative/utility 定义、有界残差、连续强度、两阶段优化。
+3. 实验：先 Adapter 再 Gate 再 importance 的归因链；严格 validation/test 协议。
+4. 鲁棒性：缺失率/类型/机制/质量偏移与第二数据集。
+5. 局限：教师监督覆盖、效用与真实因果的区别、额外前向成本、基座依赖。
+
+目前可用：“已实现”“提出候选框架”“待验证”“在指定条件下开展实验”。
+目前不可用：“首次”“SOTA”“显著提升”“有效恢复缺失语义”“因果可识别”“所有 seed 均有效”，除非有相应新颖性审查与实验证据。
+
+本文件为后续工作的验收清单，不替代正式训练结果；本轮没有修改模型源码或跑完整训练。
