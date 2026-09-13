@@ -1,0 +1,81 @@
+﻿python.exe : WARNING - root - Changed type of config entry "max_steps" from int to NoneType
+At line:7 char:49
++ ... .txt'; $out=& $python 'run.py' print_config with task_finetune_mmimdb ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING - root ...int to NoneType:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+INFO - CLIP - Running command 'print_config'
+INFO - CLIP - Started
+INFO - CLIP - Completed after 0:00:00
+Configuration ([34mmodified[0m, [32madded[0m, [31mtypechanged[0m, [2mdoc[0m):
+[34m  batch_size = 256                   [2m# this is a desired batch size; pl trainer will accumulate gradients when per step batch is smaller.[0m[0m
+  both_ratio = 0.5                   [2m# missing both ratio[0m
+[34m  data_root = 'D:\\PythonProjects\\srtp2\\data\\mmimdb\\arrow'    [2m# below params varies with the environment[0m[0m
+[34m  datasets = ['mmimdb'][0m
+  decay_power = 1
+[34m  draw_false_image = 0[0m
+  draw_false_text = 0
+  end_lr = 0
+[34m  exp_name = 'dcp_mmimdb_epoch1_pilot_002'[0m
+  fast_dev_run = False
+  finetune_first = False
+  fix_model = True                   [2m# fix backbone model (CLIP) weights[0m
+  food101_class_num = 101
+  get_recall_metric = False          [2m# Downstream Setting[0m
+  hatememes_class_num = 2
+  image_only = False
+  image_size = 224
+[34m  learning_rate = 0.01[0m
+  load_path = ''
+[34m  log_dir = 'pilot_logs'[0m
+  lr_mult = 1                        [2m# multiply lr for downstream heads[0m
+[34m  max_epoch = 1[0m
+[31m  max_steps = None[0m
+[34m  max_text_len = 1024                [2m# Text Setting[0m[0m
+[34m  missing_table_root = 'D:\\PythonProjects\\srtp2\\data\\mmimdb\\missing_tables'[0m
+  mlm_prob = 0.15
+  mmimdb_class_num = 23
+  num_gpus = 1
+  num_nodes = 1
+[34m  num_workers = 0[0m
+  optim_type = 'adamw'               [2m# Optimizer Setting[0m
+[34m  per_gpu_batchsize = 2              [2m# you should define this manually with per_gpu_batch_size=#[0m[0m
+  precision = 16
+  prompt_depth = 6
+  prompt_length = 36                 [2m# missing_aware_prompts config[0m
+  resume_from = None                 [2m# PL Trainer Setting[0m
+  seed = 0                           [2m# the random seed for this experiment[0m
+  simulate_missing = False
+  test_exp_name = None
+  test_only = False
+  test_ratio = None                  [2m# eval config (for bash execution)[0m
+  test_type = None
+  train_transform_keys = ['CLIP_transform']    [2m# Image setting[0m
+  val_check_interval = 1.0
+  val_transform_keys = ['CLIP_transform']
+  vit = 'ViT-B/16'                   [2m# Transformer Setting[0m
+  vocab_size = 30522
+[31m  warmup_steps = 0.1[0m
+[34m  weight_decay = 0.02[0m
+  whole_word_masking = False
+[34m  loss_names:[0m
+    food101 = 0
+    hatememes = 0
+    irtr = 0
+[34m    itm = 0[0m
+[34m    mlm = 0[0m
+[34m    mmimdb = 1[0m
+    mpp = 0
+    mppd = 0
+    nlvr2 = 0
+    vqa = 0
+  missing_ratio:                     [2m# missing modality config[0m
+    test = 0.7
+    train = 0.7
+    val = 0.7
+  missing_type:                      [2m# ['text', 'image', 'both'] in VL taskss[0m
+    test = 'both'
+    train = 'both'
+    val = 'both'
+

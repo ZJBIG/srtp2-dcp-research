@@ -1,0 +1,17 @@
+# GPU-enabled torch and torchvision must come from the selected AIStation
+# PyTorch image.  They are intentionally not installed or replaced here.
+einops==0.3.0
+ftfy==6.2.3
+jsonlines==3.1.0
+numpy==1.19.5
+pandas==1.1.5
+Pillow==9.3.0
+pyarrow==2.0.0
+pytorch_lightning==1.1.4
+regex==2023.10.3
+sacred==0.8.2
+setuptools==65.6.3
+timm==0.9.8
+torchmetrics==0.9.3
+transformers==4.2.1
+tqdm==4.56.0

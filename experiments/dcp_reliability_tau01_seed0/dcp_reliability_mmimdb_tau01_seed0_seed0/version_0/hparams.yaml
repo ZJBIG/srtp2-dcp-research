@@ -1,0 +1,100 @@
+config:
+  __doc__: Train availability-conditioned reliability prompt adaptation.
+  batch_size: 256
+  both_ratio: 0.5
+  clip_cache_root: D:\PythonProjects\srtp2\cache\clip
+  counterfactual_adversary_strength: 0.25
+  counterfactual_adversary_warmup_steps: 500
+  counterfactual_alignment_weight: 0.1
+  counterfactual_challenge_radius: 0.5
+  counterfactual_enabled: false
+  counterfactual_gain_margin: 0.05
+  counterfactual_gain_weight: 0.1
+  counterfactual_hidden_dim: 512
+  counterfactual_identity_dim: 32
+  counterfactual_lr_mult: 0.1
+  counterfactual_plausibility_weight: 0.1
+  counterfactual_robust_weight: 0.25
+  data_root: D:\PythonProjects\srtp2\data\mmimdb\arrow
+  datasets:
+  - mmimdb
+  decay_power: 1
+  draw_false_image: 0
+  draw_false_text: 0
+  end_lr: 0
+  exp_name: dcp_reliability_mmimdb_tau01_seed0
+  fast_dev_run: false
+  finetune_first: false
+  fix_model: true
+  food101_class_num: 101
+  get_recall_metric: false
+  hatememes_class_num: 2
+  image_only: false
+  image_size: 224
+  lambda1: 1.0
+  lambda2: 0.1
+  lambda3: 0.1
+  learning_rate: 0.01
+  load_path: ''
+  log_dir: D:\PythonProjects\srtp2\experiments\dcp_reliability_tau01_seed0
+  loss_names:
+    food101: 0
+    hatememes: 0
+    irtr: 0
+    itm: 0
+    mlm: 0
+    mmimdb: 1
+    mpp: 0
+    mppd: 0
+    nlvr2: 0
+    vqa: 0
+  lr_mult: 1
+  max_epoch: 20
+  max_steps: null
+  max_text_len: 1024
+  missing_ratio:
+    test: 0.7
+    train: 0.7
+    val: 0.7
+  missing_table_root: D:\PythonProjects\srtp2\data\mmimdb\missing_tables
+  missing_type:
+    test: both
+    train: both
+    val: both
+  mlm_prob: 0.15
+  mmimdb_class_num: 23
+  num_gpus: 1
+  num_nodes: 1
+  num_workers: 0
+  optim_type: adamw
+  per_gpu_batchsize: 1
+  precision: 16
+  prompt_depth: 6
+  prompt_length: 36
+  reliability_enabled: true
+  reliability_gate_gain_scale: 0.1
+  reliability_gate_warmup_steps: 500
+  reliability_hidden_dim: 256
+  reliability_prompt_hidden_dim: 64
+  reliability_temperature: 0.1
+  reliability_temperature_by_task:
+    food101: null
+    hatememes: null
+    mmimdb: 0.1
+  resume_from: null
+  seed: 0
+  simulate_missing: false
+  test_exp_name: null
+  test_only: false
+  test_ratio: null
+  test_type: null
+  train_transform_keys:
+  - CLIP_transform
+  val_check_interval: 0.2
+  val_transform_keys:
+  - CLIP_transform
+  vit: ViT-B/16
+  vocab_size: 30522
+  warmup_steps: 0.1
+  weight_decay: 0.02
+  whole_word_masking: false

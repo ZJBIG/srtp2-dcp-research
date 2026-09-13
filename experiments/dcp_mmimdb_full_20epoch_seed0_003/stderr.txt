@@ -1,0 +1,40 @@
+WARNING - root - Changed type of config entry "max_steps" from int to NoneType
+WARNING - CLIP - No observers have been added to this run
+INFO - CLIP - Running command 'main'
+INFO - CLIP - Started
+Global seed set to 0
+INFO - lightning - Global seed set to 0
+GPU available: True, used: True
+INFO - lightning - GPU available: True, used: True
+TPU available: None, using: 0 TPU cores
+INFO - lightning - TPU available: None, using: 0 TPU cores
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+INFO - lightning - LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Using native 16bit precision.
+INFO - lightning - Using native 16bit precision.
+
+  | Name                   | Type       | Params
+------------------------------------------------------
+0 | model                  | CustomCLIP | 155 M 
+1 | mmimdb_classifier      | Linear     | 23.6 K
+2 | train_mmimdb_F1_scores | F1_Score   | 0     
+3 | train_mmimdb_loss      | Scalar     | 0     
+4 | val_mmimdb_F1_scores   | F1_Score   | 0     
+5 | val_mmimdb_loss        | Scalar     | 0     
+------------------------------------------------------
+5.8 M     Trainable params
+149 M     Non-trainable params
+155 M     Total params
+INFO - lightning - 
+  | Name                   | Type       | Params
+------------------------------------------------------
+0 | model                  | CustomCLIP | 155 M 
+1 | mmimdb_classifier      | Linear     | 23.6 K
+2 | train_mmimdb_F1_scores | F1_Score   | 0     
+3 | train_mmimdb_loss      | Scalar     | 0     
+4 | val_mmimdb_F1_scores   | F1_Score   | 0     
+5 | val_mmimdb_loss        | Scalar     | 0     
+------------------------------------------------------
+5.8 M     Trainable params
+149 M     Non-trainable params
+155 M     Total params

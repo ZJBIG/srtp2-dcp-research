@@ -1,0 +1,58 @@
+DCP MM-IMDb reproduction
+Profile:        dcp_mmimdb_reproduction_seed0
+Micro-batch:    2
+Effective batch: 256
+Epochs:        20
+Progress:      Lightning percentage progress bar
+Log file:       D:\PythonProjects\srtp2\experiments\dcp_mmimdb_reproduction\logs\dcp_mmimdb_reproduction_seed0.txt
+Checkpoint root: D:\PythonProjects\srtp2\experiments\dcp_mmimdb_reproduction\checkpoints
+Started:        2026-07-27T22:11:48
+WARNING - root - Changed type of config entry "max_steps" from int to NoneType
+WARNING - CLIP - No observers have been added to this run
+INFO - CLIP - Running command 'main'
+INFO - CLIP - Started
+Global seed set to 0
+INFO - lightning - Global seed set to 0
+Building custom CLIP
+ERROR - CLIP - Failed after 0:00:03!
+Traceback (most recent call last):
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\experiment.py", line 312, in run_commandline
+    return self.run(
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\experiment.py", line 276, in run
+    run()
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\run.py", line 238, in __call__
+    self.result = self.main_function(*args)
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\config\captured_function.py", line 42, in captured_function
+    result = wrapped(*args, **kwargs)
+  File "run.py", line 50, in main
+    os.makedirs(target_dir)
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\os.py", line 213, in makedirs
+    makedirs(head, exist_ok=exist_ok)
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\os.py", line 213, in makedirs
+    makedirs(head, exist_ok=exist_ok)
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\os.py", line 213, in makedirs
+    makedirs(head, exist_ok=exist_ok)
+  [Previous line repeated 3 more times]
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\os.py", line 223, in makedirs
+    mkdir(name, mode)
+OSError: [WinError 123] 文件名、目录名或卷标语法不正确。: './result_model_files/D:'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "run.py", line 12, in <module>
+    def main(_config):
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\experiment.py", line 190, in automain
+    self.run_commandline()
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\experiment.py", line 347, in run_commandline
+    print_filtered_stacktrace()
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\utils.py", line 493, in print_filtered_stacktrace
+    print(format_filtered_stacktrace(filter_traceback), file=sys.stderr)
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\utils.py", line 528, in format_filtered_stacktrace
+    return "".join(filtered_traceback_format(tb_exception))
+  File "D:\PythonProjects\srtp2\.conda-dcp-train\lib\site-packages\sacred\utils.py", line 568, in filtered_traceback_format
+    current_tb = tb_exception.exc_traceback
+AttributeError: 'TracebackException' object has no attribute 'exc_traceback'
+Finished with exit code: 1
+Log file: D:\PythonProjects\srtp2\experiments\dcp_mmimdb_reproduction\logs\dcp_mmimdb_reproduction_seed0.txt
+Checkpoints: D:\PythonProjects\srtp2\experiments\dcp_mmimdb_reproduction\checkpoints

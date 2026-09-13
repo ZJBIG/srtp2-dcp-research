@@ -1,0 +1,68 @@
+# Local environments, IDE state and assistant session data
+/.conda-dcp/
+/.conda-dcp-train/
+/.conda-pkgs/
+/.agents/
+/.codex/
+/.idea/
+/.workbuddy-ai/
+/Microsoft/
+.venv*/
+venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+.pytest_cache/
+
+# Credentials and private local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+
+# Datasets, pretrained weights, training checkpoints and duplicate upload bundles
+/data/
+/cache/
+/checkpoints/
+/aistation_upload/
+/aistation_upload.zip
+/dcp_reliability_code.tar.gz
+/code/Deep_Correlated_Prompting-main.zip
+/tmp/
+/logs/
+*.ckpt
+*.pt
+*.pth
+*.arrow
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pkl
+*.pickle
+events.out.tfevents.*
+
+# Preserve experiment metadata/metrics, exclude repeated source snapshots
+/code/Deep_Correlated_Prompting-main/result_model_files/
+/code/Deep_Correlated_Prompting-main/pilot_logs/
+/code/Deep_Correlated_Prompting-main/smoke_logs/
+/code/Deep_Correlated_Prompting-main/datasets/
+/code/Deep_Correlated_Prompting-main/run.py.before_*
+/code/experiments/
+
+# Research source PDF is referenced, not redistributed; tokenizer vocabulary stays tracked
+/papers/*.pdf
+
+# Large console logs stay local; compact metrics and hparams remain tracked
+/experiments/dcp_mmimdb_reproduction/logs/dcp_mmimdb_reproduction_seed0.txt
+/experiments/dcp_mmimdb_reproduction/resume_output.txt
+/experiments/dcp_mmimdb_reproduction/terminal_output.txt
+*.before_*
+
+# Generated archives and audit working files
+/outputs/*.zip
+/outputs/*.bundle
+/outputs/*.log
+/outputs/*.json

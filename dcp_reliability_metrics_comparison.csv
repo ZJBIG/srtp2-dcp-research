@@ -1,0 +1,5 @@
+dataset,missing_rate,missing_type,split,method,seed,best_epoch,step,micro_f1,macro_f1,samples_f1,macro_f1_pct_delta_vs_original_reproduction,micro_f1_pct_delta_vs_original_reproduction,source
+MM-IMDb,0.7,missing-both,validation,Original paper,NA,NA,NA,NA,0.5424,NA,0.08,NA,papers/Deep Correlated Prompting.pdf
+MM-IMDb,0.7,missing-both,validation,Original DCP reproduction,0,3,507,0.6165356636,0.5415560603,0.6061018705,0.0,0.0,experiments/dcp_mmimdb_reproduction/checkpoints/dcp_mmimdb_reproduction_seed0_seed0/version_2/metrics.csv
+MM-IMDb,0.7,missing-both,validation,Reliability-DCP,0,4,634,0.6084154844,0.5277569294,0.5994648337,-1.37991309,-0.81201742,tmp/results_compare_tau01/dcp_rel_mmimdb_tau01_full_seed0/version_0/metrics.csv
+MM-IMDb,0.7,missing-both,validation,Reliability-DCP minus Original DCP reproduction,NA,NA,NA,-0.0081201792,-0.0137991309,-0.0066370372,-1.37991309,-0.81201742,computed from the two metrics.csv files
