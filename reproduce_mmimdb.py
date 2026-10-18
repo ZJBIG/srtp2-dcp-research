@@ -41,11 +41,40 @@ RUN_LOG_DIR = EXPERIMENT_ROOT / "checkpoints"
 PROFILE_NAME = "dcp_mmimdb_reproduction_seed0"
 MICRO_BATCH = 2
 
+REQUIRED_DIRS = (
+    ("DCP_CODE_ROOT", CODE_ROOT),
+    ("MMIMDB_DATA_ROOT", ARROW_ROOT),
+    ("MISSING_TABLE_ROOT", MISSING_TABLE_ROOT),
+)
+
+
+def missing_inputs():
+    """Return human-readable descriptions of every missing required input."""
+
+    missing = [
+        "  - {0}: {1}".format(name, path)
+        for name, path in REQUIRED_DIRS
+        if not path.is_dir()
+    ]
+    entry_point = CODE_ROOT / "run.py"
+    if not entry_point.is_file():
+        missing.append("  - run.py: {0}".format(entry_point))
+    return missing
+
 
 def main():
-    for path in (CODE_ROOT, ARROW_ROOT, MISSING_TABLE_ROOT):
-        if not path.is_dir():
-            raise FileNotFoundError(path)
+    missing = missing_inputs()
+    if missing:
+        raise SystemExit(
+            "\n".join(
+                ["Required inputs are missing:"]
+                + missing
+                + [
+                    "Override them with DCP_CODE_ROOT, MMIMDB_DATA_ROOT and "
+                    "MISSING_TABLE_ROOT."
+                ]
+            )
+        )
 
     log_root = EXPERIMENT_ROOT / "logs"
     log_root.mkdir(parents=True, exist_ok=True)
