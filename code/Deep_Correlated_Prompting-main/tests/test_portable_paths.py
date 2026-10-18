@@ -23,7 +23,9 @@ class PortablePathTests(unittest.TestCase):
             WORKSPACE_ROOT / "tools" / "inspect_dcp_loader_lengths.py",
             WORKSPACE_ROOT / "tools" / "audit_dcp_artifacts.py",
         ]
-        machine_path = re.compile(r"[A-Za-z]:[\\/]|/data2/")
+        # A drive letter can never be preceded by another letter or digit, but
+        # lowercase prose can ("missing:\n"), so anchor the match.
+        machine_path = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]:[\\/]|/data2/")
         for path in files:
             with self.subTest(path=path):
                 text = path.read_text(encoding="utf-8")
