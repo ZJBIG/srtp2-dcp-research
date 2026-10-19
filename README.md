@@ -177,23 +177,6 @@ tools/
 tests/
 ```
 
-本仓库当前的正式目标是：在 **Original DCP** 基础上训练并验证一条已冻结的主线：
-
-```text
-Original DCP frozen representation
-        ↓
-relative importance predictor
-        ↓
-availability-aware bounded Prompt Adapter
-        ↓
-direct-task continuous UtilityGate
-        ↓
-frozen DCP classifier / MM-IMDb BCE
-```
-
-工程侧已经完成路径迁移、依赖入口和预检脚本；研究侧仍需在 AIStation 上完成正式训练、消融和多 seed 验证。**当前不能宣称性能提升已经完成**。
-
-
 ## 6. 创建 Python 虚拟环境
 
 平台镜像必须已经自带可用的 GPU PyTorch。安装脚本不会重新安装或替换 `torch` / `torchvision`，只安装项目其余依赖。
@@ -215,8 +198,8 @@ bash setup_aistation_env.sh
 安装完成后验证：
 
 ```bash
-export PYTHON_BIN='$DCP_VENV_DIR/bin/python'
-'$PYTHON_BIN' -c 'import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))'
+export PYTHON_BIN="${DCP_VENV_DIR}/bin/python"
+"$PYTHON_BIN" -c 'import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))'
 ```
 
 如果平台不能访问公网，先准备 Linux / Python 3.8 对应的 wheelhouse，再执行：
@@ -324,10 +307,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\run_local_smoke.ps1
 
 该脚本会：
 
-- 使用本机 `.conda-dcp-train` 环境
+- 优先使用 `PYTHON_BIN`；否则使用 `DCP_CONDA_PREFIX`（默认 `.conda-dcp-train`）中的 `python.exe`；再否则回退到 `PATH` 上的 `python`
 - 执行 2-batch、2-epoch 的跨阶段检查
-- 输出到 `experiments\dcp_local_smoke`
+- 输出到 `experiments\dcp_local_smoke`，可用 `DCP_SMOKE_LOG_DIR` 覆盖
 - 确认依次出现 `TRAINING_PHASE=ADAPTER`、`TRAINING_PHASE=GATE`、`GATE_SUPERVISION=DIRECT_TASK`
+
+输入路径同样支持环境变量覆盖（`MMIMDB_DATA_ROOT`、`MISSING_TABLE_ROOT`、`CLIP_CACHE_ROOT`、`ORIGINAL_DCP_PATH`）。缺少任何输入时脚本会列出缺失项及对应变量名，而不是只报一句 `Required path not found.`。
 
 
 ## 10. 创建正式训练任务
@@ -445,7 +430,7 @@ GATE 阶段:   GATE_SUPERVISION=DIRECT_TASK
 训练产物位于 `TRAIN_LOG_DIR` 下。可用：
 
 ```bash
-find $TRAIN_LOG_DIR -type f \( -name 'last.ckpt' -o -name '*.ckpt' \) -print
+find "$TRAIN_LOG_DIR" -type f \( -name 'last.ckpt' -o -name '*.ckpt' \) -print
 ```
 
 
@@ -454,32 +439,32 @@ find $TRAIN_LOG_DIR -type f \( -name 'last.ckpt' -o -name '*.ckpt' \) -print
 进入同一代码执行目录，先恢复与训练一致的环境变量；如果使用独立挂载，请替换为实际路径：
 
 ```bash
-export MMIMDB_DATA_ROOT=${MMIMDB_DATA_ROOT:-../../data/mmimdb/arrow}
-export MISSING_TABLE_ROOT=${MISSING_TABLE_ROOT:-../../data/mmimdb/missing_tables}
-export ORIGINAL_DCP_PATH=${ORIGINAL_DCP_PATH:-../../experiments/dcp_mmimdb_reproduction/checkpoints/dcp_mmimdb_reproduction_seed0_seed0/version_2/checkpoints/epoch=3-step=507.ckpt}
-export TRAIN_LOG_DIR=${TRAIN_LOG_DIR:-../../outputs/direct_task_full_logs}
+export MMIMDB_DATA_ROOT="${MMIMDB_DATA_ROOT:-../../data/mmimdb/arrow}"
+export MISSING_TABLE_ROOT="${MISSING_TABLE_ROOT:-../../data/mmimdb/missing_tables}"
+export ORIGINAL_DCP_PATH="${ORIGINAL_DCP_PATH:-../../experiments/dcp_mmimdb_reproduction/checkpoints/dcp_mmimdb_reproduction_seed0_seed0/version_2/checkpoints/epoch=3-step=507.ckpt}"
+export TRAIN_LOG_DIR="${TRAIN_LOG_DIR:-../../outputs/direct_task_full_logs}"
 
-if [ -n ${DCP_VENV_DIR:-} ] && [ -x $DCP_VENV_DIR/bin/python ]; then
-  export PYTHON_BIN=${PYTHON_BIN:-$DCP_VENV_DIR/bin/python}
+if [ -n "${DCP_VENV_DIR:-}" ] && [ -x "${DCP_VENV_DIR}/bin/python" ]; then
+  export PYTHON_BIN="${PYTHON_BIN:-${DCP_VENV_DIR}/bin/python}"
 else
-  export PYTHON_BIN=${PYTHON_BIN:-python}
+  export PYTHON_BIN="${PYTHON_BIN:-python}"
 fi
 
-export FINAL_CKPT=<训练产生的 last.ckpt>
-export EVAL_OUTPUT=$TRAIN_LOG_DIR/evaluation_seed0.json
-mkdir -p $TRAIN_LOG_DIR
+export FINAL_CKPT="/path/to/last.ckpt"  # 替换为训练实际产生的 last.ckpt
+export EVAL_OUTPUT="${TRAIN_LOG_DIR}/evaluation_seed0.json"
+mkdir -p "${TRAIN_LOG_DIR}"
 ```
 
 运行 validation 评估：
 
 ```bash
-$PYTHON_BIN tools/evaluate_final_reliability.py \
-  $FINAL_CKPT \
-  $ORIGINAL_DCP_PATH \
-  $EVAL_OUTPUT \
+"$PYTHON_BIN" tools/evaluate_final_reliability.py \
+  "$FINAL_CKPT" \
+  "$ORIGINAL_DCP_PATH" \
+  "$EVAL_OUTPUT" \
   --split val \
-  --data-root $MMIMDB_DATA_ROOT \
-  --missing-table-root $MISSING_TABLE_ROOT \
+  --data-root "$MMIMDB_DATA_ROOT" \
+  --missing-table-root "$MISSING_TABLE_ROOT" \
   --seed 0
 ```
 

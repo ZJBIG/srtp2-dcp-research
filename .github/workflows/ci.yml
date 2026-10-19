@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Static checks and dependency-free tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
+      # The training stack (torch, torchvision, pyarrow) is image-provided and
+      # GPU-bound, so CI only byte-compiles it instead of importing it.
+      - name: Byte-compile Python sources
+        run: |
+          python -m compileall -q \
+            code/Deep_Correlated_Prompting-main \
+            tools \
+            reproduce_mmimdb.py \
+            reproduce_mmimdb_bs1.py \
+            verify_mmimdb_arrow.py
+
+      - name: Syntax-check shell entry points
+        run: |
+          for script in code/Deep_Correlated_Prompting-main/*.sh; do
+            bash -n "$script"
+          done
+
+      - name: Run dependency-free unit tests
+        working-directory: code/Deep_Correlated_Prompting-main
+        run: |
+          python tests/test_portable_paths.py -v
+          python tests/test_docs_and_launchers.py -v
